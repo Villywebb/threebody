@@ -7,14 +7,16 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Group;
 import javafx.scene.Scene;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Vector;
 
 public class Simulator extends Application {
-    double gravityConst = Math.pow(10, -11) * 6.674;
+    double gravityConst = 0.01;
     ArrayList<Planet> planets = new ArrayList<>();
     Group root;
 
@@ -27,6 +29,8 @@ public class Simulator extends Application {
         root = new Group();
         Scene scene = new Scene(root);
         stage.setTitle("3body");
+        stage.setWidth(1500);
+        stage.setHeight(1000);
         stage.setScene(scene);
         stage.show();
         spawner();
@@ -34,14 +38,17 @@ public class Simulator extends Application {
     }
 
     void spawner() {
-        Planet pln1 = new Planet(500, 500, 900000000, 1,0,0.01,0);
-        Planet pln2 = new Planet(223, 60, 900000000, 0, 0, 0, 0);
-        Planet pln3 = new Planet(674, 233, 900000000, 0, 0, 0, 0);
+        Planet pln1 = new Planet(500, 200, 1 , 0, 0, 0.1, 0);
+        Planet pln2 = new Planet(500, 500, 1, 0, 0, 0, 0);
+        Planet pln3 = new Planet(500, 800, 1, 0, 0, -0.1, 0);
         planets.add(pln1);
         planets.add(pln2);
         planets.add(pln3);
+
         root.getChildren().addAll(pln1, pln2, pln3);
-        System.out.println(pln1.getCenterX());
+
+        pln2.setFill(Color.RED);
+
 
     }
 
@@ -51,20 +58,29 @@ public class Simulator extends Application {
                 for (Planet p2 : planets) {
                     if (p1 != p2) {
 
-
                         double p1Mass = p1.getMass();
                         double p2Mass = p2.getMass();
+                        double distX = Math.abs(p1.getX() - p2.getX());
+                        double distY = Math.abs(p1.getY() - p2.getY());
+                        double angle = Math.atan(distY / distX);
+                        double distance = Math.sqrt(distX * distX + distY * distY);
 
-                        double gravityForce_X = gravityForceX(p1Mass, p2Mass, distanceX(p1, p2));
-                        double gravityForce_Y = gravityForceY(p1Mass, p2Mass, distanceY(p1, p2));
+                        double forceVector = gravityForce(p1Mass, p2Mass, distance);
 
-                        p1.setX_acceleration(-gravityForce_X / p1Mass);
-                        p1.setY_acceleration(-gravityForce_Y / p1Mass);
-                        p2.setX_acceleration(gravityForce_X / p2Mass);
-                        p2.setY_acceleration(gravityForce_Y / p2Mass);
+                        if(p1.getY() > p2.getY()){
+                            p1.addY_velocity(-forceVector * distance * Math.sin(angle));
+                        }else {
+                            p1.addY_velocity(forceVector * distance * Math.sin(angle));
+                        }
+
+                        if (p1.getX() > p2.getX()){
+                            p1.addX_velocity(-forceVector * distance * Math.cos(angle));
+                        }else{
+                            p1.addX_velocity(forceVector * distance * Math.cos(angle));
+                        }
 
 
-                        System.out.println(gravityForceX(p1Mass, p2Mass, distanceX(p1, p2)) / p2Mass);
+                        System.out.println(distX);
 
                     }
                 }
@@ -75,12 +91,20 @@ public class Simulator extends Application {
         timeline.play();
     }
 
-    double distanceX(Planet p1, Planet p2) {
-        return Math.abs(p1.getX() - p2.getX());
+    double distX(Planet p1, Planet p2) {
+        return p1.getX() - p2.getX();
     }
 
-    double distanceY(Planet p1, Planet p2) {
-        return Math.abs(p1.getY() - p2.getY());
+    double distY(Planet p1, Planet p2) {
+        return p1.getY() - p2.getY();
+    }
+
+    double distance(Planet p1, Planet p2) {
+        return Math.sqrt(distX(p1, p2) * distX(p1, p2) + distY(p1, p2) * distY(p1, p2));
+    }
+
+    double gravityForce(double mass_1, double mass_2, double distance) {
+        return gravityConst * ((mass_1 * mass_2) / (distance * distance));
     }
 
     double gravityForceX(double mass_1, double mass_2, double distance) {
